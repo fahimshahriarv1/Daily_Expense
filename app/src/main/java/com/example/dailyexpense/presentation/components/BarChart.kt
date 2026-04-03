@@ -1,5 +1,6 @@
 package com.example.dailyexpense.presentation.components
 
+import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -65,10 +65,10 @@ fun BarChart(
 
                 // Draw amount on top of bar
                 if (stat.totalAmount > 0) {
-                    val paint = android.graphics.Paint().apply {
+                    val paint = Paint().apply {
                         color = labelColor.hashCode()
                         textSize = 10.sp.toPx()
-                        textAlign = android.graphics.Paint.Align.CENTER
+                        textAlign = Paint.Align.CENTER
                     }
                     drawContext.canvas.nativeCanvas.drawText(
                         formatAmount(stat.totalAmount),
