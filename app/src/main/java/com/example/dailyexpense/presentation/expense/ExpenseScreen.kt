@@ -29,6 +29,7 @@ import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -271,7 +272,10 @@ private fun AddExpenseSheet(
                     FilterChip(
                         selected = state.category == category,
                         onClick = { onEvent(ExpenseEvent.CategoryChanged(category)) },
-                        label = { Text(category) }
+                        label = { Text(category) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        )
                     )
                 }
             }
