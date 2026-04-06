@@ -9,9 +9,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -28,11 +33,21 @@ fun BarChart(
     data: List<ExpenseStats>,
     modifier: Modifier = Modifier,
     barColor: Color = MaterialTheme.colorScheme.primary,
-    labelColor: Color = MaterialTheme.colorScheme.onSurface
+    labelColor: Color = MaterialTheme.colorScheme.onSurface,
+    incomeData: List<ExpenseStats> = emptyList(),
+    incomeBarColor: Color = MaterialTheme.colorScheme.tertiary
 ) {
     if (data.isEmpty()) return
 
-    val maxAmount = data.maxOf { it.totalAmount }.coerceAtLeast(1.0)
+    val hasIncome = incomeData.isNotEmpty()
+    val maxAmount = if (hasIncome) {
+        maxOf(
+            data.maxOf { it.totalAmount },
+            incomeData.maxOfOrNull { it.totalAmount } ?: 0.0
+        ).coerceAtLeast(1.0)
+    } else {
+        data.maxOf { it.totalAmount }.coerceAtLeast(1.0)
+    }
 
     Column(modifier = modifier) {
         Canvas(
@@ -43,39 +58,77 @@ fun BarChart(
         ) {
             val barCount = data.size
             val totalSpacing = size.width * 0.2f
-            val barSpacing = totalSpacing / (barCount + 1)
-            val barWidth = (size.width - totalSpacing) / barCount
+            val groupSpacing = totalSpacing / (barCount + 1)
+            val groupWidth = (size.width - totalSpacing) / barCount
             val maxBarHeight = size.height - 24.dp.toPx()
 
-            data.forEachIndexed { index, stat ->
-                val barHeight = if (maxAmount > 0) {
-                    (stat.totalAmount / maxAmount * maxBarHeight).toFloat()
-                } else 0f
+            if (hasIncome) {
+                val barWidth = groupWidth * 0.45f
+                val gap = groupWidth * 0.1f
 
-                val x = barSpacing + index * (barWidth + barSpacing)
-                val y = size.height - barHeight
+                data.forEachIndexed { index, stat ->
+                    val x = groupSpacing + index * (groupWidth + groupSpacing)
 
-                // Draw bar with rounded top corners
-                drawRoundRect(
-                    color = barColor,
-                    topLeft = Offset(x, y),
-                    size = Size(barWidth, barHeight),
-                    cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
-                )
+                    // Income bar (left)
+                    val incomeAmount = incomeData.getOrNull(index)?.totalAmount ?: 0.0
+                    val incomeHeight = if (maxAmount > 0) {
+                        (incomeAmount / maxAmount * maxBarHeight).toFloat()
+                    } else 0f
 
-                // Draw amount on top of bar
-                if (stat.totalAmount > 0) {
-                    val paint = Paint().apply {
-                        color = labelColor.hashCode()
-                        textSize = 10.sp.toPx()
-                        textAlign = Paint.Align.CENTER
+                    if (incomeHeight > 0) {
+                        drawRoundRect(
+                            color = incomeBarColor,
+                            topLeft = Offset(x, size.height - incomeHeight),
+                            size = Size(barWidth, incomeHeight),
+                            cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
+                        )
                     }
-                    drawContext.canvas.nativeCanvas.drawText(
-                        formatAmount(stat.totalAmount),
-                        x + barWidth / 2,
-                        y - 4.dp.toPx(),
-                        paint
+
+                    // Expense bar (right)
+                    val expenseHeight = if (maxAmount > 0) {
+                        (stat.totalAmount / maxAmount * maxBarHeight).toFloat()
+                    } else 0f
+
+                    if (expenseHeight > 0) {
+                        drawRoundRect(
+                            color = barColor,
+                            topLeft = Offset(x + barWidth + gap, size.height - expenseHeight),
+                            size = Size(barWidth, expenseHeight),
+                            cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
+                        )
+                    }
+                }
+            } else {
+                val barWidth = groupWidth
+
+                data.forEachIndexed { index, stat ->
+                    val barHeight = if (maxAmount > 0) {
+                        (stat.totalAmount / maxAmount * maxBarHeight).toFloat()
+                    } else 0f
+
+                    val x = groupSpacing + index * (barWidth + groupSpacing)
+                    val y = size.height - barHeight
+
+                    drawRoundRect(
+                        color = barColor,
+                        topLeft = Offset(x, y),
+                        size = Size(barWidth, barHeight),
+                        cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
                     )
+
+                    if (stat.totalAmount > 0) {
+                        val paint = Paint().apply {
+                            color = labelColor.hashCode()
+                            textSize = 10.sp.toPx()
+                            textAlign = Paint.Align.CENTER
+                        }
+                        drawContext.canvas.nativeCanvas.drawText(
+                            formatAmount(stat.totalAmount),
+                            x + barWidth / 2,
+                            y - 4.dp.toPx(),
+                            paint
+                        )
+                    }
                 }
             }
         }
@@ -97,6 +150,32 @@ fun BarChart(
                     modifier = Modifier.weight(1f),
                     maxLines = 1
                 )
+            }
+        }
+
+        // Legend
+        if (hasIncome) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = incomeBarColor,
+                    modifier = Modifier.size(10.dp)
+                ) {}
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Income", style = MaterialTheme.typography.labelSmall)
+                Spacer(modifier = Modifier.width(16.dp))
+                Surface(
+                    shape = CircleShape,
+                    color = barColor,
+                    modifier = Modifier.size(10.dp)
+                ) {}
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Expense", style = MaterialTheme.typography.labelSmall)
             }
         }
     }

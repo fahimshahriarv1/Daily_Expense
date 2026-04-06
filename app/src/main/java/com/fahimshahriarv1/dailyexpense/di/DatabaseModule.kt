@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.fahimshahriarv1.dailyexpense.data.local.AppDatabase
 import com.fahimshahriarv1.dailyexpense.data.local.dao.AccountDao
 import com.fahimshahriarv1.dailyexpense.data.local.dao.ExpenseDao
+import com.fahimshahriarv1.dailyexpense.data.local.dao.IncomeDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -31,4 +32,7 @@ object DatabaseModule {
 
     @Provides
     fun provideAccountDao(db: AppDatabase): AccountDao = db.accountDao()
+
+    @Provides
+    fun provideIncomeDao(db: AppDatabase): IncomeDao = db.incomeDao()
 }

@@ -1,10 +1,12 @@
 package com.fahimshahriarv1.dailyexpense.presentation.account
 
 import com.fahimshahriarv1.dailyexpense.domain.model.Account
+import com.fahimshahriarv1.dailyexpense.domain.model.Income
 import com.fahimshahriarv1.dailyexpense.domain.model.User
 
 data class AccountState(
     val accounts: List<Account> = emptyList(),
+    val incomes: List<Income> = emptyList(),
     val name: String = "",
     val type: String = "Cash",
     val balance: String = "",
@@ -15,9 +17,18 @@ data class AccountState(
     val isSignedIn: Boolean = false,
     val isAuthLoading: Boolean = false,
     val authError: String? = null,
-    val showIncomeDialog: Boolean = false,
+
+    // Income form
+    val showIncomeSheet: Boolean = false,
+    val editingIncome: Income? = null,
     val incomeAmount: String = "",
-    val incomeAccount: Account? = null
+    val incomeSource: String = "",
+    val incomeNote: String = "",
+    val incomeDate: Long = System.currentTimeMillis(),
+    val incomeAccountId: Long = -1L,
+    val incomeSources: List<String> = listOf(
+        "Salary", "Freelance", "Business", "Investment", "Gift", "Other"
+    )
 )
 
 sealed class AccountEffect {

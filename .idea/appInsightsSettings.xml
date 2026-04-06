@@ -9,9 +9,9 @@
               <option name="connection">
                 <ConnectionSetting>
                   <option name="appId" value="com.fahimshahriarv1.dailyexpense" />
-                  <option name="mobileSdkAppId" value="1:000000000000:android:0000000000000000" />
-                  <option name="projectId" value="placeholder-project" />
-                  <option name="projectNumber" value="000000000000" />
+                  <option name="mobileSdkAppId" value="1:456704083477:android:41da4c77db090b7de3701c" />
+                  <option name="projectId" value="dailyexpense-8b5b4" />
+                  <option name="projectNumber" value="456704083477" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

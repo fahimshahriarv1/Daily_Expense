@@ -5,12 +5,12 @@ import com.fahimshahriarv1.dailyexpense.domain.repository.AccountRepository
 import com.fahimshahriarv1.dailyexpense.domain.repository.IncomeRepository
 import javax.inject.Inject
 
-class AddIncomeUseCase @Inject constructor(
+class DeleteIncomeUseCase @Inject constructor(
     private val incomeRepository: IncomeRepository,
     private val accountRepository: AccountRepository
 ) {
     suspend operator fun invoke(income: Income) {
-        incomeRepository.addIncome(income)
-        accountRepository.addBalance(income.accountId, income.amount)
+        incomeRepository.deleteIncome(income)
+        accountRepository.deductBalance(income.accountId, income.amount)
     }
 }
