@@ -1,31 +1,36 @@
 {
   "project_info": {
-    "project_number": "000000000000",
-    "project_id": "placeholder-project",
-    "storage_bucket": "placeholder-project.appspot.com"
+    "project_number": "456704083477",
+    "project_id": "dailyexpense-8b5b4",
+    "storage_bucket": "dailyexpense-8b5b4.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
+        "mobilesdk_app_id": "1:456704083477:android:41da4c77db090b7de3701c",
         "android_client_info": {
           "package_name": "com.fahimshahriarv1.dailyexpense"
         }
       },
       "oauth_client": [
         {
-          "client_id": "000000000000-placeholder.apps.googleusercontent.com",
+          "client_id": "456704083477-ojgg227d81n45cptadvcvdjrgaee7jag.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "placeholder_api_key"
+          "current_key": "AIzaSyCP658rMMqfihdy0YFrz8yHbHTQVi3twyI"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "456704083477-ojgg227d81n45cptadvcvdjrgaee7jag.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

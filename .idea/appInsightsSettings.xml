@@ -8,7 +8,7 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="com.example.dailyexpense" />
+                  <option name="appId" value="com.fahimshahriarv1.dailyexpense" />
                   <option name="mobileSdkAppId" value="1:000000000000:android:0000000000000000" />
                   <option name="projectId" value="placeholder-project" />
                   <option name="projectNumber" value="000000000000" />
