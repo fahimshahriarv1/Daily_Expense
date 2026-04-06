@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fahimshahriarv1.dailyexpense.domain.model.Account
 import com.fahimshahriarv1.dailyexpense.domain.usecase.account.AddAccountUseCase
+import com.fahimshahriarv1.dailyexpense.domain.usecase.account.AddIncomeUseCase
 import com.fahimshahriarv1.dailyexpense.domain.usecase.account.DeleteAccountUseCase
 import com.fahimshahriarv1.dailyexpense.domain.usecase.account.GetAccountsUseCase
 import com.fahimshahriarv1.dailyexpense.domain.usecase.auth.GetCurrentUserUseCase
@@ -23,6 +24,7 @@ class AccountViewModel @Inject constructor(
     private val getAccountsUseCase: GetAccountsUseCase,
     private val addAccountUseCase: AddAccountUseCase,
     private val deleteAccountUseCase: DeleteAccountUseCase,
+    private val addIncomeUseCase: AddIncomeUseCase,
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
     private val signInWithGoogleUseCase: SignInWithGoogleUseCase,
     private val signOutUseCase: SignOutUseCase
@@ -58,6 +60,14 @@ class AccountViewModel @Inject constructor(
                 _state.update { it.copy(isAuthLoading = false, authError = event.message) }
             }
             is AccountEvent.SignOut -> signOut()
+            is AccountEvent.StartAddIncome -> _state.update {
+                it.copy(showIncomeDialog = true, incomeAccount = event.account, incomeAmount = "")
+            }
+            is AccountEvent.IncomeAmountChanged -> _state.update { it.copy(incomeAmount = event.amount) }
+            is AccountEvent.ConfirmAddIncome -> addIncome()
+            is AccountEvent.DismissIncomeDialog -> _state.update {
+                it.copy(showIncomeDialog = false, incomeAccount = null, incomeAmount = "")
+            }
         }
     }
 
@@ -119,6 +129,29 @@ class AccountViewModel @Inject constructor(
                 _effect.send(AccountEffect.ShowSnackbar("Account deleted"))
             } catch (e: Exception) {
                 _effect.send(AccountEffect.ShowSnackbar("Failed to delete account"))
+            }
+        }
+    }
+
+    private fun addIncome() {
+        val currentState = _state.value
+        val account = currentState.incomeAccount ?: return
+        val amount = currentState.incomeAmount.toDoubleOrNull()
+
+        if (amount == null || amount <= 0) {
+            viewModelScope.launch { _effect.send(AccountEffect.ShowSnackbar("Enter a valid amount")) }
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                addIncomeUseCase(account.id, amount)
+                _state.update {
+                    it.copy(showIncomeDialog = false, incomeAccount = null, incomeAmount = "")
+                }
+                _effect.send(AccountEffect.ShowSnackbar("Income added to ${account.name}"))
+            } catch (e: Exception) {
+                _effect.send(AccountEffect.ShowSnackbar("Failed to add income"))
             }
         }
     }

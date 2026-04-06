@@ -14,7 +14,10 @@ data class AccountState(
     val user: User? = null,
     val isSignedIn: Boolean = false,
     val isAuthLoading: Boolean = false,
-    val authError: String? = null
+    val authError: String? = null,
+    val showIncomeDialog: Boolean = false,
+    val incomeAmount: String = "",
+    val incomeAccount: Account? = null
 )
 
 sealed class AccountEffect {

@@ -34,4 +34,7 @@ interface AccountDao {
 
     @Query("UPDATE accounts SET balance = balance - :amount WHERE id = :id")
     suspend fun deductBalance(id: Long, amount: Double)
+
+    @Query("UPDATE accounts SET balance = balance + :amount WHERE id = :id")
+    suspend fun addBalance(id: Long, amount: Double)
 }

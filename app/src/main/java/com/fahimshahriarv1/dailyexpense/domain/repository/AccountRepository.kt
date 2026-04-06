@@ -10,6 +10,7 @@ interface AccountRepository {
     suspend fun updateAccount(account: Account)
     suspend fun deleteAccount(account: Account)
     suspend fun deductBalance(id: Long, amount: Double)
+    suspend fun addBalance(id: Long, amount: Double)
     suspend fun syncFromRemote()
     suspend fun syncToRemote()
 }

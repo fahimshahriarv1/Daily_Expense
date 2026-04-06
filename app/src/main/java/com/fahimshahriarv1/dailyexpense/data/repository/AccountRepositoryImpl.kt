@@ -65,6 +65,18 @@ class AccountRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun addBalance(id: Long, amount: Double) {
+        accountDao.addBalance(id, amount)
+        try {
+            val account = accountDao.getById(id)
+            if (account != null) {
+                firestoreDataSource.updateBalance(account.uuid, account.balance)
+            }
+        } catch (e: Exception) {
+            Log.w("AccountRepo", "Firestore balance sync failed", e)
+        }
+    }
+
     override suspend fun syncFromRemote() {
         try {
             val remoteAccounts = firestoreDataSource.getAll()

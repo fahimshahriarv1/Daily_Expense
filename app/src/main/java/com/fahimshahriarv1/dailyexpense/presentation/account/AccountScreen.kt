@@ -19,6 +19,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -63,6 +64,7 @@ import com.fahimshahriarv1.dailyexpense.domain.model.Account
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun AccountScreen(
@@ -158,6 +160,7 @@ fun AccountScreen(
                     items(state.accounts, key = { it.id }) { account ->
                         AccountItem(
                             account = account,
+                            onAddIncome = { viewModel.onEvent(AccountEvent.StartAddIncome(account)) },
                             onDelete = { viewModel.onEvent(AccountEvent.DeleteAccount(account)) }
                         )
                     }
@@ -172,6 +175,14 @@ fun AccountScreen(
             state = state,
             onEvent = viewModel::onEvent,
             onDismiss = { viewModel.onEvent(AccountEvent.ToggleAddDialog) }
+        )
+    }
+
+    if (state.showIncomeDialog) {
+        AddIncomeDialog(
+            state = state,
+            onEvent = viewModel::onEvent,
+            onDismiss = { viewModel.onEvent(AccountEvent.DismissIncomeDialog) }
         )
     }
 }
@@ -251,6 +262,7 @@ private fun AuthCard(
                         color = MaterialTheme.colorScheme.primary
                     )
                 } else {
+                    val cid = stringResource(R.string.default_web_client_id)
                     Button(
                         onClick = {
                             scope.launch {
@@ -258,9 +270,7 @@ private fun AuthCard(
                                     val credentialManager = CredentialManager.create(context)
                                     val googleIdOption = GetGoogleIdOption.Builder()
                                         .setFilterByAuthorizedAccounts(false)
-                                        .setServerClientId(
-                                            context.getString(R.string.default_web_client_id)
-                                        )
+                                        .setServerClientId(cid)
                                         .build()
                                     val request = GetCredentialRequest.Builder()
                                         .addCredentialOption(googleIdOption)
@@ -301,6 +311,7 @@ private fun AuthCard(
 @Composable
 private fun AccountItem(
     account: Account,
+    onAddIncome: () -> Unit,
     onDelete: () -> Unit
 ) {
     Card(
@@ -354,6 +365,18 @@ private fun AccountItem(
             )
 
             Spacer(modifier = Modifier.width(4.dp))
+
+            IconButton(
+                onClick = onAddIncome,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    Icons.Default.KeyboardArrowUp,
+                    contentDescription = "Add Income",
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
 
             IconButton(
                 onClick = onDelete,
@@ -444,6 +467,53 @@ private fun AddAccountDialog(
         },
         confirmButton = {
             TextButton(onClick = { onEvent(AccountEvent.AddAccount) }) {
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+private fun AddIncomeDialog(
+    state: AccountState,
+    onEvent: (AccountEvent) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val accountName = state.incomeAccount?.name ?: ""
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Add Income",
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = "Add income to $accountName",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = state.incomeAmount,
+                    onValueChange = { onEvent(AccountEvent.IncomeAmountChanged(it)) },
+                    label = { Text("Amount") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onEvent(AccountEvent.ConfirmAddIncome) }) {
                 Text("Add")
             }
         },

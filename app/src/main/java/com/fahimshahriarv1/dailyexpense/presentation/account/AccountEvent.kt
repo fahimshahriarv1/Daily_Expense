@@ -12,4 +12,8 @@ sealed class AccountEvent {
     data class SignInWithToken(val idToken: String) : AccountEvent()
     data class SignInFailed(val message: String) : AccountEvent()
     data object SignOut : AccountEvent()
+    data class StartAddIncome(val account: Account) : AccountEvent()
+    data class IncomeAmountChanged(val amount: String) : AccountEvent()
+    data object ConfirmAddIncome : AccountEvent()
+    data object DismissIncomeDialog : AccountEvent()
 }
