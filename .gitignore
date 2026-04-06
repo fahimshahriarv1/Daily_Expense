@@ -17,7 +17,7 @@ local.properties
 *1.json
 *misc.xml
 *gradle.xml
-google-sevices.json
+google-services.json
 
 # Built application files
 *.apk
