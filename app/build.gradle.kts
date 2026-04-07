@@ -3,10 +3,11 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.google.services)
 }
 
 android {
-    namespace = "com.example.dailyexpense"
+    namespace = "com.fahimshahriarv1.dailyexpense"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -14,7 +15,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.dailyexpense"
+        applicationId = "com.fahimshahriarv1.dailyexpense"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -69,6 +70,16 @@ dependencies {
 
     // Navigation
     implementation(libs.navigation.compose)
+
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+
+    // Credential Manager (Google Sign-In)
+    implementation(libs.credentials)
+    implementation(libs.credentials.play.services)
+    implementation(libs.googleid)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
