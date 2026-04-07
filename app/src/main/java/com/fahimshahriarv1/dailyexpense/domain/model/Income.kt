@@ -9,6 +9,6 @@ data class Income(
     val source: String,
     val note: String = "",
     val date: Long,
-    val accountId: Long,
+    val accountUuid: String,
     val accountName: String = ""
 )

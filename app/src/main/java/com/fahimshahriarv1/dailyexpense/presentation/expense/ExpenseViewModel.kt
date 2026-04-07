@@ -10,6 +10,7 @@ import com.fahimshahriarv1.dailyexpense.domain.usecase.expense.GetExpensesUseCas
 import com.fahimshahriarv1.dailyexpense.domain.usecase.expense.UpdateExpenseUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -114,6 +115,7 @@ class ExpenseViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true) }
             try {
                 addExpenseUseCase(
                     Expense(
@@ -131,11 +133,14 @@ class ExpenseViewModel @Inject constructor(
                         note = "",
                         selectedAccountId = -1L,
                         selectedDate = System.currentTimeMillis(),
-                        showAddSheet = false
+                        showAddSheet = false,
+                        isActionLoading = false
                     )
                 }
+                delay(350)
                 _effect.send(ExpenseEffect.ShowSnackbar("Expense added"))
             } catch (e: Exception) {
+                _state.update { it.copy(isActionLoading = false) }
                 _effect.send(ExpenseEffect.ShowSnackbar("Failed to add expense"))
             }
         }
@@ -168,6 +173,7 @@ class ExpenseViewModel @Inject constructor(
         )
 
         viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true) }
             try {
                 updateExpenseUseCase(oldExpense, newExpense)
                 _state.update {
@@ -178,11 +184,14 @@ class ExpenseViewModel @Inject constructor(
                         selectedAccountId = -1L,
                         selectedDate = System.currentTimeMillis(),
                         showAddSheet = false,
-                        editingExpense = null
+                        editingExpense = null,
+                        isActionLoading = false
                     )
                 }
+                delay(350)
                 _effect.send(ExpenseEffect.ShowSnackbar("Expense updated"))
             } catch (e: Exception) {
+                _state.update { it.copy(isActionLoading = false) }
                 _effect.send(ExpenseEffect.ShowSnackbar("Failed to update expense"))
             }
         }
@@ -190,10 +199,13 @@ class ExpenseViewModel @Inject constructor(
 
     private fun deleteExpense(expense: Expense) {
         viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true) }
             try {
                 deleteExpenseUseCase(expense)
+                _state.update { it.copy(isActionLoading = false) }
                 _effect.send(ExpenseEffect.ShowSnackbar("Expense deleted"))
             } catch (e: Exception) {
+                _state.update { it.copy(isActionLoading = false) }
                 _effect.send(ExpenseEffect.ShowSnackbar("Failed to delete expense"))
             }
         }

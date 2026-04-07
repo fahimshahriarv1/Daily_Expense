@@ -21,7 +21,7 @@ sealed class AccountEvent {
     data class IncomeSourceChanged(val source: String) : AccountEvent()
     data class IncomeNoteChanged(val note: String) : AccountEvent()
     data class IncomeDateChanged(val date: Long) : AccountEvent()
-    data class IncomeAccountSelected(val accountId: Long) : AccountEvent()
+    data class IncomeAccountSelected(val accountUuid: String) : AccountEvent()
     data object ConfirmAddIncome : AccountEvent()
     data object ConfirmUpdateIncome : AccountEvent()
     data class DeleteIncome(val income: Income) : AccountEvent()

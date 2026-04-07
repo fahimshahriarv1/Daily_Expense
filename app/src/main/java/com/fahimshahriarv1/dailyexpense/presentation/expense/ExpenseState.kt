@@ -12,6 +12,7 @@ data class ExpenseState(
     val selectedAccountId: Long = -1L,
     val selectedDate: Long = System.currentTimeMillis(),
     val isLoading: Boolean = true,
+    val isActionLoading: Boolean = false,
     val showAddSheet: Boolean = false,
     val editingExpense: Expense? = null,
     val categories: List<String> = listOf(

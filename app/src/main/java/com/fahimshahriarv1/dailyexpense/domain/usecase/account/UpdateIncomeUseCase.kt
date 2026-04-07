@@ -11,9 +11,15 @@ class UpdateIncomeUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(oldIncome: Income, newIncome: Income) {
         // Reverse old income from old account
-        accountRepository.deductBalance(oldIncome.accountId, oldIncome.amount)
+        val oldAccount = accountRepository.getAccountByUuid(oldIncome.accountUuid)
+        if (oldAccount != null) {
+            accountRepository.updateAccount(oldAccount.copy(balance = oldAccount.balance - oldIncome.amount))
+        }
         // Add new income to new account
-        accountRepository.addBalance(newIncome.accountId, newIncome.amount)
+        val newAccount = accountRepository.getAccountByUuid(newIncome.accountUuid)
+        if (newAccount != null) {
+            accountRepository.updateAccount(newAccount.copy(balance = newAccount.balance + newIncome.amount))
+        }
         incomeRepository.updateIncome(newIncome)
     }
 }

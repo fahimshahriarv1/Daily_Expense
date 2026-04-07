@@ -11,6 +11,7 @@ data class AccountState(
     val type: String = "Cash",
     val balance: String = "",
     val isLoading: Boolean = true,
+    val isActionLoading: Boolean = false,
     val showAddDialog: Boolean = false,
     val accountTypes: List<String> = listOf("Cash", "Bank", "MFS", "Other"),
     val user: User? = null,
@@ -25,7 +26,7 @@ data class AccountState(
     val incomeSource: String = "",
     val incomeNote: String = "",
     val incomeDate: Long = System.currentTimeMillis(),
-    val incomeAccountId: Long = -1L,
+    val incomeAccountUuid: String = "",
     val incomeSources: List<String> = listOf(
         "Salary", "Freelance", "Business", "Investment", "Gift", "Other"
     )

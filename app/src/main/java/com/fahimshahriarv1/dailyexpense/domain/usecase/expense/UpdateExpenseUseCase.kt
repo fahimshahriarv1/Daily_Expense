@@ -11,9 +11,15 @@ class UpdateExpenseUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(oldExpense: Expense, newExpense: Expense) {
         // Restore old amount to old account
-        accountRepository.deductBalance(oldExpense.accountId, -oldExpense.amount)
+        val oldAccount = accountRepository.getAccountById(oldExpense.accountId)
+        if (oldAccount != null) {
+            accountRepository.updateAccount(oldAccount.copy(balance = oldAccount.balance + oldExpense.amount))
+        }
         // Deduct new amount from new account
-        accountRepository.deductBalance(newExpense.accountId, newExpense.amount)
+        val newAccount = accountRepository.getAccountById(newExpense.accountId)
+        if (newAccount != null) {
+            accountRepository.updateAccount(newAccount.copy(balance = newAccount.balance - newExpense.amount))
+        }
         expenseRepository.updateExpense(newExpense)
     }
 }

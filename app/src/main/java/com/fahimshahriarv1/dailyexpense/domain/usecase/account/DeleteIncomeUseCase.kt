@@ -11,6 +11,7 @@ class DeleteIncomeUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(income: Income) {
         incomeRepository.deleteIncome(income)
-        accountRepository.deductBalance(income.accountId, income.amount)
+        val account = accountRepository.getAccountByUuid(income.accountUuid) ?: return
+        accountRepository.updateAccount(account.copy(balance = account.balance - income.amount))
     }
 }

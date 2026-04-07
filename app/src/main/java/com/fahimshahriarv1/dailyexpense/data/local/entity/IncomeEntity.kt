@@ -11,11 +11,11 @@ import java.util.UUID
     tableName = "incomes",
     foreignKeys = [ForeignKey(
         entity = AccountEntity::class,
-        parentColumns = ["id"],
-        childColumns = ["accountId"],
+        parentColumns = ["uuid"],
+        childColumns = ["accountUuid"],
         onDelete = ForeignKey.CASCADE
     )],
-    indices = [Index("accountId"), Index("uuid", unique = true)]
+    indices = [Index("accountUuid"), Index("uuid", unique = true)]
 )
 data class IncomeEntity(
     @PrimaryKey(autoGenerate = true)
@@ -25,7 +25,7 @@ data class IncomeEntity(
     val source: String,
     val note: String = "",
     val date: Long,
-    val accountId: Long
+    val accountUuid: String
 )
 
 fun IncomeEntity.toDomain() = Income(
@@ -35,7 +35,7 @@ fun IncomeEntity.toDomain() = Income(
     source = source,
     note = note,
     date = date,
-    accountId = accountId
+    accountUuid = accountUuid
 )
 
 fun Income.toEntity() = IncomeEntity(
@@ -45,5 +45,5 @@ fun Income.toEntity() = IncomeEntity(
     source = source,
     note = note,
     date = date,
-    accountId = accountId
+    accountUuid = accountUuid
 )

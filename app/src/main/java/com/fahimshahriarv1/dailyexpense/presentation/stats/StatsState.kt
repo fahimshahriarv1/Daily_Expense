@@ -8,5 +8,6 @@ data class StatsState(
     val incomeStats: List<ExpenseStats> = emptyList(),
     val totalExpense: Double = 0.0,
     val totalIncome: Double = 0.0,
+    val netBalance: Double = 0.0,
     val isLoading: Boolean = true
 )

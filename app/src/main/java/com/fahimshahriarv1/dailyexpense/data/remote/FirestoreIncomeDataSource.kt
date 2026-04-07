@@ -22,7 +22,7 @@ class FirestoreIncomeDataSource @Inject constructor(
                 "source" to income.source,
                 "note" to income.note,
                 "date" to income.date,
-                "accountId" to income.accountId
+                "accountUuid" to income.accountUuid
             )
         )?.await()
     }
@@ -41,7 +41,7 @@ class FirestoreIncomeDataSource @Inject constructor(
                     source = doc.getString("source") ?: "",
                     note = doc.getString("note") ?: "",
                     date = doc.getLong("date") ?: 0L,
-                    accountId = doc.getLong("accountId") ?: 0L
+                    accountUuid = doc.getString("accountUuid") ?: ""
                 )
             } catch (e: Exception) {
                 null

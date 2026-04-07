@@ -11,7 +11,7 @@ import com.fahimshahriarv1.dailyexpense.data.local.entity.IncomeEntity
 
 @Database(
     entities = [ExpenseEntity::class, AccountEntity::class, IncomeEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {

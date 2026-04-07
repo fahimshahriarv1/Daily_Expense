@@ -1,5 +1,6 @@
 package com.fahimshahriarv1.dailyexpense.presentation.expense
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
@@ -84,53 +86,68 @@ fun ExpenseScreen(
         }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { viewModel.onEvent(ExpenseEvent.ToggleAddSheet) }
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Expense")
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = { viewModel.onEvent(ExpenseEvent.ToggleAddSheet) }
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Expense")
+                }
+            }
+        ) { padding ->
+            if (state.expenses.isEmpty() && !state.isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No expenses yet.\nTap + to add one.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    item { Spacer(modifier = Modifier.height(8.dp)) }
+                    items(state.expenses, key = { it.id }) { expense ->
+                        ExpenseItem(
+                            expense = expense,
+                            onEdit = { viewModel.onEvent(ExpenseEvent.StartEdit(expense)) },
+                            onDelete = { viewModel.onEvent(ExpenseEvent.DeleteExpense(expense)) }
+                        )
+                    }
+                    item { Spacer(modifier = Modifier.height(80.dp)) }
+                }
             }
         }
-    ) { padding ->
-        if (state.expenses.isEmpty() && !state.isLoading) {
+
+        if (state.isActionLoading) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding),
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.3f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "No expenses yet.\nTap + to add one.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                item { Spacer(modifier = Modifier.height(8.dp)) }
-                items(state.expenses, key = { it.id }) { expense ->
-                    ExpenseItem(
-                        expense = expense,
-                        onEdit = { viewModel.onEvent(ExpenseEvent.StartEdit(expense)) },
-                        onDelete = { viewModel.onEvent(ExpenseEvent.DeleteExpense(expense)) }
-                    )
-                }
-                item { Spacer(modifier = Modifier.height(80.dp)) }
+                CircularProgressIndicator()
             }
         }
+
     }
 
     if (state.showAddSheet) {
         AddExpenseSheet(
             state = state,
+            snackbarHostState = snackbarHostState,
             onEvent = viewModel::onEvent,
             onDismiss = { viewModel.onEvent(ExpenseEvent.ToggleAddSheet) }
         )
@@ -240,6 +257,7 @@ private fun ExpenseItem(
 @Composable
 private fun AddExpenseSheet(
     state: ExpenseState,
+    snackbarHostState: SnackbarHostState,
     onEvent: (ExpenseEvent) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -253,6 +271,7 @@ private fun AddExpenseSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState
     ) {
+        Box {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -373,6 +392,14 @@ private fun AddExpenseSheet(
             ) {
                 Text(if (isEditing) "Update Expense" else "Save Expense")
             }
+        }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 8.dp)
+        )
         }
     }
 

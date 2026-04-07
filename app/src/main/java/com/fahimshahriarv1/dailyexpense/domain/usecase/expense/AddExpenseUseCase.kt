@@ -11,6 +11,7 @@ class AddExpenseUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(expense: Expense) {
         expenseRepository.addExpense(expense)
-        accountRepository.deductBalance(expense.accountId, expense.amount)
+        val account = accountRepository.getAccountById(expense.accountId) ?: return
+        accountRepository.updateAccount(account.copy(balance = account.balance - expense.amount))
     }
 }

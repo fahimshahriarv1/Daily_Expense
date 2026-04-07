@@ -16,9 +16,11 @@ import com.fahimshahriarv1.dailyexpense.domain.usecase.auth.SignInWithGoogleUseC
 import com.fahimshahriarv1.dailyexpense.domain.usecase.auth.SignOutUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -78,7 +80,7 @@ class AccountViewModel @Inject constructor(
                     incomeSource = "",
                     incomeNote = "",
                     incomeDate = System.currentTimeMillis(),
-                    incomeAccountId = event.account.id
+                    incomeAccountUuid = event.account.uuid
                 )
             }
             is AccountEvent.StartEditIncome -> startEditIncome(event.income)
@@ -86,7 +88,7 @@ class AccountViewModel @Inject constructor(
             is AccountEvent.IncomeSourceChanged -> _state.update { it.copy(incomeSource = event.source) }
             is AccountEvent.IncomeNoteChanged -> _state.update { it.copy(incomeNote = event.note) }
             is AccountEvent.IncomeDateChanged -> _state.update { it.copy(incomeDate = event.date) }
-            is AccountEvent.IncomeAccountSelected -> _state.update { it.copy(incomeAccountId = event.accountId) }
+            is AccountEvent.IncomeAccountSelected -> _state.update { it.copy(incomeAccountUuid = event.accountUuid) }
             is AccountEvent.ConfirmAddIncome -> addIncome()
             is AccountEvent.ConfirmUpdateIncome -> updateIncome()
             is AccountEvent.DeleteIncome -> deleteIncome(event.income)
@@ -98,7 +100,7 @@ class AccountViewModel @Inject constructor(
                     incomeSource = "",
                     incomeNote = "",
                     incomeDate = System.currentTimeMillis(),
-                    incomeAccountId = -1L
+                    incomeAccountUuid = ""
                 )
             }
         }
@@ -120,9 +122,9 @@ class AccountViewModel @Inject constructor(
                 getAccountsUseCase(),
                 getIncomesUseCase()
             ) { accounts, incomes ->
-                val accountMap = accounts.associateBy { it.id }
+                val accountMap = accounts.associateBy { it.uuid }
                 val enrichedIncomes = incomes.map { income ->
-                    income.copy(accountName = accountMap[income.accountId]?.name ?: "Unknown")
+                    income.copy(accountName = accountMap[income.accountUuid]?.name ?: "Unknown")
                 }
                 Pair(accounts, enrichedIncomes)
             }.collect { (accounts, incomes) ->
@@ -143,6 +145,7 @@ class AccountViewModel @Inject constructor(
         val balance = currentState.balance.toDoubleOrNull() ?: 0.0
 
         viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true) }
             try {
                 addAccountUseCase(
                     Account(
@@ -156,11 +159,14 @@ class AccountViewModel @Inject constructor(
                         name = "",
                         type = "Cash",
                         balance = "",
-                        showAddDialog = false
+                        showAddDialog = false,
+                        isActionLoading = false
                     )
                 }
+                delay(350)
                 _effect.send(AccountEffect.ShowSnackbar("Account added"))
             } catch (e: Exception) {
+                _state.update { it.copy(isActionLoading = false) }
                 _effect.send(AccountEffect.ShowSnackbar("Failed to add account"))
             }
         }
@@ -168,10 +174,13 @@ class AccountViewModel @Inject constructor(
 
     private fun deleteAccount(account: Account) {
         viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true) }
             try {
                 deleteAccountUseCase(account)
+                _state.update { it.copy(isActionLoading = false) }
                 _effect.send(AccountEffect.ShowSnackbar("Account deleted"))
             } catch (e: Exception) {
+                _state.update { it.copy(isActionLoading = false) }
                 _effect.send(AccountEffect.ShowSnackbar("Failed to delete account"))
             }
         }
@@ -186,9 +195,20 @@ class AccountViewModel @Inject constructor(
                 incomeSource = income.source,
                 incomeNote = income.note,
                 incomeDate = income.date,
-                incomeAccountId = income.accountId
+                incomeAccountUuid = income.accountUuid
             )
         }
+    }
+
+    private suspend fun refreshData() {
+        delay(300)
+        val accounts = getAccountsUseCase().first()
+        val incomes = getIncomesUseCase().first()
+        val accountMap = accounts.associateBy { it.uuid }
+        val enrichedIncomes = incomes.map { income ->
+            income.copy(accountName = accountMap[income.accountUuid]?.name ?: "Unknown")
+        }
+        _state.update { it.copy(accounts = accounts, incomes = enrichedIncomes) }
     }
 
     private fun addIncome() {
@@ -203,12 +223,13 @@ class AccountViewModel @Inject constructor(
             viewModelScope.launch { _effect.send(AccountEffect.ShowSnackbar("Select a source")) }
             return
         }
-        if (currentState.incomeAccountId == -1L) {
+        if (currentState.incomeAccountUuid.isEmpty()) {
             viewModelScope.launch { _effect.send(AccountEffect.ShowSnackbar("Select an account")) }
             return
         }
 
         viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true) }
             try {
                 addIncomeUseCase(
                     Income(
@@ -216,7 +237,7 @@ class AccountViewModel @Inject constructor(
                         source = currentState.incomeSource,
                         note = currentState.incomeNote,
                         date = currentState.incomeDate,
-                        accountId = currentState.incomeAccountId
+                        accountUuid = currentState.incomeAccountUuid
                     )
                 )
                 _state.update {
@@ -226,12 +247,16 @@ class AccountViewModel @Inject constructor(
                         incomeSource = "",
                         incomeNote = "",
                         incomeDate = System.currentTimeMillis(),
-                        incomeAccountId = -1L
+                        incomeAccountUuid = ""
                     )
                 }
+                delay(350)
                 _effect.send(AccountEffect.ShowSnackbar("Income added"))
+                refreshData()
             } catch (e: Exception) {
                 _effect.send(AccountEffect.ShowSnackbar("Failed to add income"))
+            } finally {
+                _state.update { it.copy(isActionLoading = false) }
             }
         }
     }
@@ -249,7 +274,7 @@ class AccountViewModel @Inject constructor(
             viewModelScope.launch { _effect.send(AccountEffect.ShowSnackbar("Select a source")) }
             return
         }
-        if (currentState.incomeAccountId == -1L) {
+        if (currentState.incomeAccountUuid.isEmpty()) {
             viewModelScope.launch { _effect.send(AccountEffect.ShowSnackbar("Select an account")) }
             return
         }
@@ -259,10 +284,11 @@ class AccountViewModel @Inject constructor(
             source = currentState.incomeSource,
             note = currentState.incomeNote,
             date = currentState.incomeDate,
-            accountId = currentState.incomeAccountId
+            accountUuid = currentState.incomeAccountUuid
         )
 
         viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true) }
             try {
                 updateIncomeUseCase(oldIncome, newIncome)
                 _state.update {
@@ -273,11 +299,14 @@ class AccountViewModel @Inject constructor(
                         incomeSource = "",
                         incomeNote = "",
                         incomeDate = System.currentTimeMillis(),
-                        incomeAccountId = -1L
+                        incomeAccountUuid = "",
+                        isActionLoading = false
                     )
                 }
+                delay(350)
                 _effect.send(AccountEffect.ShowSnackbar("Income updated"))
             } catch (e: Exception) {
+                _state.update { it.copy(isActionLoading = false) }
                 _effect.send(AccountEffect.ShowSnackbar("Failed to update income"))
             }
         }
@@ -285,11 +314,15 @@ class AccountViewModel @Inject constructor(
 
     private fun deleteIncome(income: Income) {
         viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true) }
             try {
                 deleteIncomeUseCase(income)
                 _effect.send(AccountEffect.ShowSnackbar("Income deleted"))
+                refreshData()
             } catch (e: Exception) {
                 _effect.send(AccountEffect.ShowSnackbar("Failed to delete income"))
+            } finally {
+                _state.update { it.copy(isActionLoading = false) }
             }
         }
     }

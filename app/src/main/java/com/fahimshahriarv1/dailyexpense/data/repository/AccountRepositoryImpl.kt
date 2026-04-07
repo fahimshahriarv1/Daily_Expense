@@ -26,6 +26,10 @@ class AccountRepositoryImpl @Inject constructor(
         return accountDao.getById(id)?.toDomain()
     }
 
+    override suspend fun getAccountByUuid(uuid: String): Account? {
+        return accountDao.getByUuid(uuid)?.toDomain()
+    }
+
     override suspend fun addAccount(account: Account) {
         accountDao.insert(account.toEntity())
         try {
@@ -54,24 +58,20 @@ class AccountRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deductBalance(id: Long, amount: Double) {
-        accountDao.deductBalance(id, amount)
+        val account = accountDao.getById(id) ?: return
+        accountDao.update(account.copy(balance = account.balance - amount))
         try {
-            val account = accountDao.getById(id)
-            if (account != null) {
-                firestoreDataSource.updateBalance(account.uuid, account.balance)
-            }
+            firestoreDataSource.updateBalance(account.uuid, account.balance - amount)
         } catch (e: Exception) {
             Log.w("AccountRepo", "Firestore balance sync failed", e)
         }
     }
 
     override suspend fun addBalance(id: Long, amount: Double) {
-        accountDao.addBalance(id, amount)
+        val account = accountDao.getById(id) ?: return
+        accountDao.update(account.copy(balance = account.balance + amount))
         try {
-            val account = accountDao.getById(id)
-            if (account != null) {
-                firestoreDataSource.updateBalance(account.uuid, account.balance)
-            }
+            firestoreDataSource.updateBalance(account.uuid, account.balance + amount)
         } catch (e: Exception) {
             Log.w("AccountRepo", "Firestore balance sync failed", e)
         }

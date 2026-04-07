@@ -1,6 +1,7 @@
 package com.fahimshahriarv1.dailyexpense.presentation.account
 
 import android.app.Activity
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -107,117 +108,131 @@ fun AccountScreen(
         }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { viewModel.onEvent(AccountEvent.ToggleAddDialog) }
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = { viewModel.onEvent(AccountEvent.ToggleAddDialog) }
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Account")
+                }
+            }
+        ) { padding ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Account")
-            }
-        }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            item { Spacer(modifier = Modifier.height(0.dp)) }
+                item { Spacer(modifier = Modifier.height(0.dp)) }
 
-            // Auth card
-            item {
-                AuthCard(
-                    state = state,
-                    onEvent = viewModel::onEvent
-                )
-            }
-
-            // Total balance card
-            if (state.accounts.isNotEmpty()) {
+                // Auth card
                 item {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { balanceVisible = true },
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
-                        )
-                    ) {
-                        Column(
+                    AuthCard(
+                        state = state,
+                        onEvent = viewModel::onEvent
+                    )
+                }
+
+                // Total balance card
+                if (state.accounts.isNotEmpty()) {
+                    item {
+                        Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(20.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                                .clickable { balanceVisible = true },
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                            )
                         ) {
-                            Text(
-                                text = "Total Balance",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = if (balanceVisible) String.format("%.2f", state.accounts.sumOf { it.balance }) else "* * * *",
-                                style = MaterialTheme.typography.headlineLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(20.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "Total Balance",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = if (balanceVisible) String.format("%.2f", state.accounts.sumOf { it.balance }) else "* * * *",
+                                    style = MaterialTheme.typography.headlineLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
                         }
                     }
                 }
-            }
 
-            // Accounts section
-            if (state.accounts.isEmpty() && !state.isLoading) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No accounts yet.\nTap + to add one.",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                // Accounts section
+                if (state.accounts.isEmpty() && !state.isLoading) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No accounts yet.\nTap + to add one.",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                } else {
+                    items(state.accounts, key = { it.id }) { account ->
+                        AccountItem(
+                            account = account,
+                            balanceVisible = balanceVisible,
+                            onTapBalance = { balanceVisible = true },
+                            onAddIncome = { viewModel.onEvent(AccountEvent.StartAddIncome(account)) },
+                            onDelete = { viewModel.onEvent(AccountEvent.DeleteAccount(account)) }
                         )
                     }
                 }
-            } else {
-                items(state.accounts, key = { it.id }) { account ->
-                    AccountItem(
-                        account = account,
-                        balanceVisible = balanceVisible,
-                        onTapBalance = { balanceVisible = true },
-                        onAddIncome = { viewModel.onEvent(AccountEvent.StartAddIncome(account)) },
-                        onDelete = { viewModel.onEvent(AccountEvent.DeleteAccount(account)) }
-                    )
+
+                // Income history section
+                if (state.incomes.isNotEmpty()) {
+                    item {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Recent Income",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    items(state.incomes, key = { "income_${it.id}" }) { income ->
+                        IncomeItem(
+                            income = income,
+                            onEdit = { viewModel.onEvent(AccountEvent.StartEditIncome(income)) },
+                            onDelete = { viewModel.onEvent(AccountEvent.DeleteIncome(income)) }
+                        )
+                    }
                 }
+
+                item { Spacer(modifier = Modifier.height(80.dp)) }
             }
-
-            // Income history section
-            if (state.incomes.isNotEmpty()) {
-                item {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Recent Income",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-
-                items(state.incomes, key = { "income_${it.id}" }) { income ->
-                    IncomeItem(
-                        income = income,
-                        onEdit = { viewModel.onEvent(AccountEvent.StartEditIncome(income)) },
-                        onDelete = { viewModel.onEvent(AccountEvent.DeleteIncome(income)) }
-                    )
-                }
-            }
-
-            item { Spacer(modifier = Modifier.height(80.dp)) }
         }
+
+        if (state.isActionLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+
     }
 
     if (state.showAddDialog) {
@@ -231,6 +246,7 @@ fun AccountScreen(
     if (state.showIncomeSheet) {
         AddIncomeSheet(
             state = state,
+            snackbarHostState = snackbarHostState,
             onEvent = viewModel::onEvent,
             onDismiss = { viewModel.onEvent(AccountEvent.DismissIncomeSheet) }
         )
@@ -628,6 +644,7 @@ private fun AddAccountDialog(
 @Composable
 private fun AddIncomeSheet(
     state: AccountState,
+    snackbarHostState: SnackbarHostState,
     onEvent: (AccountEvent) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -641,6 +658,7 @@ private fun AddIncomeSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState
     ) {
+        Box {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -705,7 +723,7 @@ private fun AddIncomeSheet(
                 expanded = accountDropdownExpanded,
                 onExpandedChange = { accountDropdownExpanded = it }
             ) {
-                val selectedAccount = state.accounts.find { it.id == state.incomeAccountId }
+                val selectedAccount = state.accounts.find { it.uuid == state.incomeAccountUuid }
                 OutlinedTextField(
                     value = selectedAccount?.let { "${it.name} (${it.type})" } ?: "",
                     onValueChange = {},
@@ -724,7 +742,7 @@ private fun AddIncomeSheet(
                         DropdownMenuItem(
                             text = { Text("${account.name} (${account.type}) - ${String.format("%.2f", account.balance)}") },
                             onClick = {
-                                onEvent(AccountEvent.IncomeAccountSelected(account.id))
+                                onEvent(AccountEvent.IncomeAccountSelected(account.uuid))
                                 accountDropdownExpanded = false
                             }
                         )
@@ -754,6 +772,14 @@ private fun AddIncomeSheet(
             ) {
                 Text(if (isEditing) "Update Income" else "Save Income")
             }
+        }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 8.dp)
+        )
         }
     }
 
