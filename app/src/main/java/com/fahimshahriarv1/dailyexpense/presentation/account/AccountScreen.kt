@@ -943,6 +943,8 @@ private fun TransferSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var fromDropdownExpanded by remember { mutableStateOf(false) }
     var toDropdownExpanded by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -1054,6 +1056,16 @@ private fun TransferSheet(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Date picker
+                OutlinedButton(
+                    onClick = { showDatePicker = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Date: ${dateFormat.format(Date(state.transferDate))}")
+                }
+
                 Spacer(modifier = Modifier.height(20.dp))
 
                 // Transfer button
@@ -1071,6 +1083,28 @@ private fun TransferSheet(
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 8.dp)
             )
+        }
+    }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = state.transferDate
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let {
+                        onEvent(AccountEvent.TransferDateChanged(it))
+                    }
+                    showDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
         }
     }
 }

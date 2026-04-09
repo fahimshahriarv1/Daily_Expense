@@ -33,6 +33,7 @@ sealed class AccountEvent {
     data class TransferAmountChanged(val amount: String) : AccountEvent()
     data class TransferToAccountSelected(val accountUuid: String) : AccountEvent()
     data class TransferNoteChanged(val note: String) : AccountEvent()
+    data class TransferDateChanged(val date: Long) : AccountEvent()
     data object ConfirmTransfer : AccountEvent()
     data object DismissTransferSheet : AccountEvent()
     data class DeleteTransfer(val transfer: Transfer) : AccountEvent()

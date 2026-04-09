@@ -38,7 +38,8 @@ data class AccountState(
     val transferAmount: String = "",
     val transferFromAccountUuid: String = "",
     val transferToAccountUuid: String = "",
-    val transferNote: String = ""
+    val transferNote: String = "",
+    val transferDate: Long = System.currentTimeMillis()
 )
 
 sealed class AccountEffect {

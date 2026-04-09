@@ -9,7 +9,7 @@ class TransferBetweenAccountsUseCase @Inject constructor(
     private val accountRepository: AccountRepository,
     private val transferRepository: TransferRepository
 ) {
-    suspend operator fun invoke(fromAccountUuid: String, toAccountUuid: String, amount: Double, note: String = "") {
+    suspend operator fun invoke(fromAccountUuid: String, toAccountUuid: String, amount: Double, note: String = "", date: Long = System.currentTimeMillis()) {
         val fromAccount = accountRepository.getAccountByUuid(fromAccountUuid)
             ?: throw IllegalArgumentException("Source account not found")
         val toAccount = accountRepository.getAccountByUuid(toAccountUuid)
@@ -24,7 +24,7 @@ class TransferBetweenAccountsUseCase @Inject constructor(
                 fromAccountUuid = fromAccountUuid,
                 toAccountUuid = toAccountUuid,
                 note = note,
-                date = System.currentTimeMillis()
+                date = date
             )
         )
     }

@@ -106,12 +106,14 @@ class AccountViewModel @Inject constructor(
                     transferAmount = "",
                     transferFromAccountUuid = event.account.uuid,
                     transferToAccountUuid = "",
-                    transferNote = ""
+                    transferNote = "",
+                    transferDate = System.currentTimeMillis()
                 )
             }
             is AccountEvent.TransferAmountChanged -> _state.update { it.copy(transferAmount = event.amount) }
             is AccountEvent.TransferToAccountSelected -> _state.update { it.copy(transferToAccountUuid = event.accountUuid) }
             is AccountEvent.TransferNoteChanged -> _state.update { it.copy(transferNote = event.note) }
+            is AccountEvent.TransferDateChanged -> _state.update { it.copy(transferDate = event.date) }
             is AccountEvent.ConfirmTransfer -> confirmTransfer()
             is AccountEvent.DismissTransferSheet -> _state.update {
                 it.copy(
@@ -119,7 +121,8 @@ class AccountViewModel @Inject constructor(
                     transferAmount = "",
                     transferFromAccountUuid = "",
                     transferToAccountUuid = "",
-                    transferNote = ""
+                    transferNote = "",
+                    transferDate = System.currentTimeMillis()
                 )
             }
             is AccountEvent.DeleteTransfer -> deleteTransfer(event.transfer)
@@ -416,7 +419,8 @@ class AccountViewModel @Inject constructor(
                     fromAccountUuid = currentState.transferFromAccountUuid,
                     toAccountUuid = currentState.transferToAccountUuid,
                     amount = amount,
-                    note = currentState.transferNote
+                    note = currentState.transferNote,
+                    date = currentState.transferDate
                 )
                 _state.update {
                     it.copy(
@@ -424,7 +428,8 @@ class AccountViewModel @Inject constructor(
                         transferAmount = "",
                         transferFromAccountUuid = "",
                         transferToAccountUuid = "",
-                        transferNote = ""
+                        transferNote = "",
+                        transferDate = System.currentTimeMillis()
                     )
                 }
                 delay(350)
