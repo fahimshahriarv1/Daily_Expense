@@ -76,6 +76,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fahimshahriarv1.dailyexpense.R
 import com.fahimshahriarv1.dailyexpense.domain.model.Account
 import com.fahimshahriarv1.dailyexpense.domain.model.Income
+import com.fahimshahriarv1.dailyexpense.domain.model.Transfer
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.launch
@@ -216,6 +217,25 @@ fun AccountScreen(
                             income = income,
                             onEdit = { viewModel.onEvent(AccountEvent.StartEditIncome(income)) },
                             onDelete = { viewModel.onEvent(AccountEvent.DeleteIncome(income)) }
+                        )
+                    }
+                }
+
+                // Transfer history section
+                if (state.transfers.isNotEmpty()) {
+                    item {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Recent Transfers",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    items(state.transfers, key = { "transfer_${it.id}" }) { transfer ->
+                        TransferItem(
+                            transfer = transfer,
+                            onDelete = { viewModel.onEvent(AccountEvent.DeleteTransfer(transfer)) }
                         )
                     }
                 }
@@ -574,6 +594,88 @@ private fun IncomeItem(
                             tint = MaterialTheme.colorScheme.outline
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TransferItem(
+    transfer: Transfer,
+    onDelete: () -> Unit
+) {
+    val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy  hh:mm a", Locale.getDefault()) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = CardDefaults.outlinedCardBorder()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.Send,
+                        contentDescription = "Transfer",
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "${transfer.fromAccountName} \u2192 ${transfer.toAccountName}",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                if (transfer.note.isNotEmpty()) {
+                    Text(
+                        text = transfer.note,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Text(
+                    text = dateFormat.format(Date(transfer.date)),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = String.format("%.2f", transfer.amount),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.outline
+                    )
                 }
             }
         }

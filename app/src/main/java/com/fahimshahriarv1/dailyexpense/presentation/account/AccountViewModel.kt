@@ -8,8 +8,10 @@ import com.fahimshahriarv1.dailyexpense.domain.usecase.account.AddAccountUseCase
 import com.fahimshahriarv1.dailyexpense.domain.usecase.account.AddIncomeUseCase
 import com.fahimshahriarv1.dailyexpense.domain.usecase.account.DeleteAccountUseCase
 import com.fahimshahriarv1.dailyexpense.domain.usecase.account.DeleteIncomeUseCase
+import com.fahimshahriarv1.dailyexpense.domain.usecase.account.DeleteTransferUseCase
 import com.fahimshahriarv1.dailyexpense.domain.usecase.account.GetAccountsUseCase
 import com.fahimshahriarv1.dailyexpense.domain.usecase.account.GetIncomesUseCase
+import com.fahimshahriarv1.dailyexpense.domain.usecase.account.GetTransfersUseCase
 import com.fahimshahriarv1.dailyexpense.domain.usecase.account.TransferBetweenAccountsUseCase
 import com.fahimshahriarv1.dailyexpense.domain.usecase.account.UpdateIncomeUseCase
 import com.fahimshahriarv1.dailyexpense.domain.usecase.auth.GetCurrentUserUseCase
@@ -37,6 +39,8 @@ class AccountViewModel @Inject constructor(
     private val updateIncomeUseCase: UpdateIncomeUseCase,
     private val deleteIncomeUseCase: DeleteIncomeUseCase,
     private val transferBetweenAccountsUseCase: TransferBetweenAccountsUseCase,
+    private val getTransfersUseCase: GetTransfersUseCase,
+    private val deleteTransferUseCase: DeleteTransferUseCase,
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
     private val signInWithGoogleUseCase: SignInWithGoogleUseCase,
     private val signOutUseCase: SignOutUseCase
@@ -118,6 +122,7 @@ class AccountViewModel @Inject constructor(
                     transferNote = ""
                 )
             }
+            is AccountEvent.DeleteTransfer -> deleteTransfer(event.transfer)
 
             is AccountEvent.DismissIncomeSheet -> _state.update {
                 it.copy(
@@ -147,16 +152,23 @@ class AccountViewModel @Inject constructor(
         viewModelScope.launch {
             combine(
                 getAccountsUseCase(),
-                getIncomesUseCase()
-            ) { accounts, incomes ->
+                getIncomesUseCase(),
+                getTransfersUseCase()
+            ) { accounts, incomes, transfers ->
                 val accountMap = accounts.associateBy { it.uuid }
                 val enrichedIncomes = incomes.map { income ->
                     income.copy(accountName = accountMap[income.accountUuid]?.name ?: "Unknown")
                 }
-                Pair(accounts, enrichedIncomes)
-            }.collect { (accounts, incomes) ->
+                val enrichedTransfers = transfers.map { transfer ->
+                    transfer.copy(
+                        fromAccountName = accountMap[transfer.fromAccountUuid]?.name ?: "Unknown",
+                        toAccountName = accountMap[transfer.toAccountUuid]?.name ?: "Unknown"
+                    )
+                }
+                Triple(accounts, enrichedIncomes, enrichedTransfers)
+            }.collect { (accounts, incomes, transfers) ->
                 _state.update {
-                    it.copy(accounts = accounts, incomes = incomes, isLoading = false)
+                    it.copy(accounts = accounts, incomes = incomes, transfers = transfers, isLoading = false)
                 }
             }
         }
@@ -231,11 +243,18 @@ class AccountViewModel @Inject constructor(
         delay(300)
         val accounts = getAccountsUseCase().first()
         val incomes = getIncomesUseCase().first()
+        val transfers = getTransfersUseCase().first()
         val accountMap = accounts.associateBy { it.uuid }
         val enrichedIncomes = incomes.map { income ->
             income.copy(accountName = accountMap[income.accountUuid]?.name ?: "Unknown")
         }
-        _state.update { it.copy(accounts = accounts, incomes = enrichedIncomes) }
+        val enrichedTransfers = transfers.map { transfer ->
+            transfer.copy(
+                fromAccountName = accountMap[transfer.fromAccountUuid]?.name ?: "Unknown",
+                toAccountName = accountMap[transfer.toAccountUuid]?.name ?: "Unknown"
+            )
+        }
+        _state.update { it.copy(accounts = accounts, incomes = enrichedIncomes, transfers = enrichedTransfers) }
     }
 
     private fun addIncome() {
@@ -354,6 +373,21 @@ class AccountViewModel @Inject constructor(
         }
     }
 
+    private fun deleteTransfer(transfer: com.fahimshahriarv1.dailyexpense.domain.model.Transfer) {
+        viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true) }
+            try {
+                deleteTransferUseCase(transfer)
+                _effect.send(AccountEffect.ShowSnackbar("Transfer record deleted"))
+                refreshData()
+            } catch (e: Exception) {
+                _effect.send(AccountEffect.ShowSnackbar("Failed to delete transfer"))
+            } finally {
+                _state.update { it.copy(isActionLoading = false) }
+            }
+        }
+    }
+
     private fun confirmTransfer() {
         val currentState = _state.value
         val amount = currentState.transferAmount.toDoubleOrNull()
@@ -381,7 +415,8 @@ class AccountViewModel @Inject constructor(
                 transferBetweenAccountsUseCase(
                     fromAccountUuid = currentState.transferFromAccountUuid,
                     toAccountUuid = currentState.transferToAccountUuid,
-                    amount = amount
+                    amount = amount,
+                    note = currentState.transferNote
                 )
                 _state.update {
                     it.copy(

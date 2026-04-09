@@ -2,11 +2,13 @@ package com.fahimshahriarv1.dailyexpense.presentation.account
 
 import com.fahimshahriarv1.dailyexpense.domain.model.Account
 import com.fahimshahriarv1.dailyexpense.domain.model.Income
+import com.fahimshahriarv1.dailyexpense.domain.model.Transfer
 import com.fahimshahriarv1.dailyexpense.domain.model.User
 
 data class AccountState(
     val accounts: List<Account> = emptyList(),
     val incomes: List<Income> = emptyList(),
+    val transfers: List<Transfer> = emptyList(),
     val name: String = "",
     val type: String = "Cash",
     val balance: String = "",

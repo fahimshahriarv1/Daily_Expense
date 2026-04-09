@@ -2,6 +2,7 @@ package com.fahimshahriarv1.dailyexpense.presentation.account
 
 import com.fahimshahriarv1.dailyexpense.domain.model.Account
 import com.fahimshahriarv1.dailyexpense.domain.model.Income
+import com.fahimshahriarv1.dailyexpense.domain.model.Transfer
 
 sealed class AccountEvent {
     data class NameChanged(val name: String) : AccountEvent()
@@ -34,4 +35,5 @@ sealed class AccountEvent {
     data class TransferNoteChanged(val note: String) : AccountEvent()
     data object ConfirmTransfer : AccountEvent()
     data object DismissTransferSheet : AccountEvent()
+    data class DeleteTransfer(val transfer: Transfer) : AccountEvent()
 }

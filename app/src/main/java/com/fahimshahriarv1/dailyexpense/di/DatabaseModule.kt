@@ -6,6 +6,7 @@ import com.fahimshahriarv1.dailyexpense.data.local.AppDatabase
 import com.fahimshahriarv1.dailyexpense.data.local.dao.AccountDao
 import com.fahimshahriarv1.dailyexpense.data.local.dao.ExpenseDao
 import com.fahimshahriarv1.dailyexpense.data.local.dao.IncomeDao
+import com.fahimshahriarv1.dailyexpense.data.local.dao.TransferDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -35,4 +36,7 @@ object DatabaseModule {
 
     @Provides
     fun provideIncomeDao(db: AppDatabase): IncomeDao = db.incomeDao()
+
+    @Provides
+    fun provideTransferDao(db: AppDatabase): TransferDao = db.transferDao()
 }
