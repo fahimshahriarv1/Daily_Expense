@@ -13,4 +13,6 @@ sealed class ExpenseEvent {
     data class DeleteExpense(val expense: Expense) : ExpenseEvent()
     data class StartEdit(val expense: Expense) : ExpenseEvent()
     data object ToggleAddSheet : ExpenseEvent()
+    data class ToggleFilterAccount(val accountId: Long) : ExpenseEvent()
+    data object ClearAccountFilter : ExpenseEvent()
 }

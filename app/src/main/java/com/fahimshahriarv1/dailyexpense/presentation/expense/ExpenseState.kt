@@ -18,7 +18,10 @@ data class ExpenseState(
     val categories: List<String> = listOf(
         "Food", "Transport", "Shopping", "Bills",
         "Entertainment", "Health", "Education", "Other"
-    )
+    ),
+
+    // Account filter (empty = show all)
+    val selectedFilterAccountIds: Set<Long> = emptySet()
 )
 
 sealed class ExpenseEffect {

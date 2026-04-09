@@ -97,6 +97,12 @@ fun ExpenseScreen(
                 }
             }
         ) { padding ->
+            val filteredExpenses = if (state.selectedFilterAccountIds.isEmpty()) {
+                state.expenses
+            } else {
+                state.expenses.filter { it.accountId in state.selectedFilterAccountIds }
+            }
+
             if (state.expenses.isEmpty() && !state.isLoading) {
                 Box(
                     modifier = Modifier
@@ -119,13 +125,60 @@ fun ExpenseScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     item { Spacer(modifier = Modifier.height(8.dp)) }
-                    items(state.expenses, key = { it.id }) { expense ->
-                        ExpenseItem(
-                            expense = expense,
-                            onEdit = { viewModel.onEvent(ExpenseEvent.StartEdit(expense)) },
-                            onDelete = { viewModel.onEvent(ExpenseEvent.DeleteExpense(expense)) }
-                        )
+
+                    // Account filter chips
+                    if (state.accounts.size > 1) {
+                        item {
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                item {
+                                    FilterChip(
+                                        selected = state.selectedFilterAccountIds.isEmpty(),
+                                        onClick = { viewModel.onEvent(ExpenseEvent.ClearAccountFilter) },
+                                        label = { Text("All") },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        )
+                                    )
+                                }
+                                items(state.accounts, key = { "filter_${it.id}" }) { account ->
+                                    FilterChip(
+                                        selected = account.id in state.selectedFilterAccountIds,
+                                        onClick = { viewModel.onEvent(ExpenseEvent.ToggleFilterAccount(account.id)) },
+                                        label = { Text(account.name) },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        )
+                                    )
+                                }
+                            }
+                        }
                     }
+
+                    if (filteredExpenses.isEmpty() && state.selectedFilterAccountIds.isNotEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(120.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No expenses for selected accounts.",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    } else {
+                        items(filteredExpenses, key = { it.id }) { expense ->
+                            ExpenseItem(
+                                expense = expense,
+                                onEdit = { viewModel.onEvent(ExpenseEvent.StartEdit(expense)) },
+                                onDelete = { viewModel.onEvent(ExpenseEvent.DeleteExpense(expense)) }
+                            )
+                        }
+                    }
+
                     item { Spacer(modifier = Modifier.height(80.dp)) }
                 }
             }

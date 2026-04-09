@@ -57,6 +57,14 @@ class ExpenseViewModel @Inject constructor(
                     it.copy(showAddSheet = true)
                 }
             }
+            is ExpenseEvent.ToggleFilterAccount -> _state.update {
+                val newSet = it.selectedFilterAccountIds.toMutableSet()
+                if (newSet.contains(event.accountId)) newSet.remove(event.accountId) else newSet.add(event.accountId)
+                it.copy(selectedFilterAccountIds = newSet)
+            }
+            is ExpenseEvent.ClearAccountFilter -> _state.update {
+                it.copy(selectedFilterAccountIds = emptySet())
+            }
         }
     }
 
