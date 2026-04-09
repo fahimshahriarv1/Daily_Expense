@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -193,6 +194,7 @@ fun AccountScreen(
                             balanceVisible = balanceVisible,
                             onTapBalance = { balanceVisible = true },
                             onAddIncome = { viewModel.onEvent(AccountEvent.StartAddIncome(account)) },
+                            onTransfer = { viewModel.onEvent(AccountEvent.StartTransfer(account)) },
                             onDelete = { viewModel.onEvent(AccountEvent.DeleteAccount(account)) }
                         )
                     }
@@ -249,6 +251,15 @@ fun AccountScreen(
             snackbarHostState = snackbarHostState,
             onEvent = viewModel::onEvent,
             onDismiss = { viewModel.onEvent(AccountEvent.DismissIncomeSheet) }
+        )
+    }
+
+    if (state.showTransferSheet) {
+        TransferSheet(
+            state = state,
+            snackbarHostState = snackbarHostState,
+            onEvent = viewModel::onEvent,
+            onDismiss = { viewModel.onEvent(AccountEvent.DismissTransferSheet) }
         )
     }
 }
@@ -378,6 +389,7 @@ private fun AccountItem(
     balanceVisible: Boolean,
     onTapBalance: () -> Unit,
     onAddIncome: () -> Unit,
+    onTransfer: () -> Unit,
     onDelete: () -> Unit
 ) {
     Card(
@@ -441,6 +453,18 @@ private fun AccountItem(
                     contentDescription = "Add Income",
                     modifier = Modifier.size(18.dp),
                     tint = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            IconButton(
+                onClick = onTransfer,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.Send,
+                    contentDescription = "Transfer",
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.tertiary
                 )
             }
 
@@ -802,6 +826,149 @@ private fun AddIncomeSheet(
             }
         ) {
             DatePicker(state = datePickerState)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TransferSheet(
+    state: AccountState,
+    snackbarHostState: SnackbarHostState,
+    onEvent: (AccountEvent) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var fromDropdownExpanded by remember { mutableStateOf(false) }
+    var toDropdownExpanded by remember { mutableStateOf(false) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
+        Box {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 32.dp)
+            ) {
+                Text(
+                    text = "Transfer",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Amount
+                OutlinedTextField(
+                    value = state.transferAmount,
+                    onValueChange = { onEvent(AccountEvent.TransferAmountChanged(it)) },
+                    label = { Text("Amount") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // From account dropdown
+                ExposedDropdownMenuBox(
+                    expanded = fromDropdownExpanded,
+                    onExpandedChange = { fromDropdownExpanded = it }
+                ) {
+                    val fromAccount = state.accounts.find { it.uuid == state.transferFromAccountUuid }
+                    OutlinedTextField(
+                        value = fromAccount?.let { "${it.name} (${it.type})" } ?: "",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("From Account") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = fromDropdownExpanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                    )
+                    ExposedDropdownMenu(
+                        expanded = fromDropdownExpanded,
+                        onDismissRequest = { fromDropdownExpanded = false }
+                    ) {
+                        state.accounts.forEach { account ->
+                            DropdownMenuItem(
+                                text = { Text("${account.name} (${account.type}) - ${String.format("%.2f", account.balance)}") },
+                                onClick = {
+                                    onEvent(AccountEvent.StartTransfer(account))
+                                    fromDropdownExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // To account dropdown
+                ExposedDropdownMenuBox(
+                    expanded = toDropdownExpanded,
+                    onExpandedChange = { toDropdownExpanded = it }
+                ) {
+                    val toAccount = state.accounts.find { it.uuid == state.transferToAccountUuid }
+                    OutlinedTextField(
+                        value = toAccount?.let { "${it.name} (${it.type})" } ?: "",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("To Account") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = toDropdownExpanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                    )
+                    ExposedDropdownMenu(
+                        expanded = toDropdownExpanded,
+                        onDismissRequest = { toDropdownExpanded = false }
+                    ) {
+                        state.accounts
+                            .filter { it.uuid != state.transferFromAccountUuid }
+                            .forEach { account ->
+                                DropdownMenuItem(
+                                    text = { Text("${account.name} (${account.type}) - ${String.format("%.2f", account.balance)}") },
+                                    onClick = {
+                                        onEvent(AccountEvent.TransferToAccountSelected(account.uuid))
+                                        toDropdownExpanded = false
+                                    }
+                                )
+                            }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Note
+                OutlinedTextField(
+                    value = state.transferNote,
+                    onValueChange = { onEvent(AccountEvent.TransferNoteChanged(it)) },
+                    label = { Text("Note (optional)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Transfer button
+                Button(
+                    onClick = { onEvent(AccountEvent.ConfirmTransfer) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Transfer")
+                }
+            }
+
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 8.dp)
+            )
         }
     }
 }

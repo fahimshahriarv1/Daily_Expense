@@ -10,6 +10,7 @@ import com.fahimshahriarv1.dailyexpense.domain.usecase.account.DeleteAccountUseC
 import com.fahimshahriarv1.dailyexpense.domain.usecase.account.DeleteIncomeUseCase
 import com.fahimshahriarv1.dailyexpense.domain.usecase.account.GetAccountsUseCase
 import com.fahimshahriarv1.dailyexpense.domain.usecase.account.GetIncomesUseCase
+import com.fahimshahriarv1.dailyexpense.domain.usecase.account.TransferBetweenAccountsUseCase
 import com.fahimshahriarv1.dailyexpense.domain.usecase.account.UpdateIncomeUseCase
 import com.fahimshahriarv1.dailyexpense.domain.usecase.auth.GetCurrentUserUseCase
 import com.fahimshahriarv1.dailyexpense.domain.usecase.auth.SignInWithGoogleUseCase
@@ -35,6 +36,7 @@ class AccountViewModel @Inject constructor(
     private val addIncomeUseCase: AddIncomeUseCase,
     private val updateIncomeUseCase: UpdateIncomeUseCase,
     private val deleteIncomeUseCase: DeleteIncomeUseCase,
+    private val transferBetweenAccountsUseCase: TransferBetweenAccountsUseCase,
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
     private val signInWithGoogleUseCase: SignInWithGoogleUseCase,
     private val signOutUseCase: SignOutUseCase
@@ -92,6 +94,31 @@ class AccountViewModel @Inject constructor(
             is AccountEvent.ConfirmAddIncome -> addIncome()
             is AccountEvent.ConfirmUpdateIncome -> updateIncome()
             is AccountEvent.DeleteIncome -> deleteIncome(event.income)
+
+            // Transfer events
+            is AccountEvent.StartTransfer -> _state.update {
+                it.copy(
+                    showTransferSheet = true,
+                    transferAmount = "",
+                    transferFromAccountUuid = event.account.uuid,
+                    transferToAccountUuid = "",
+                    transferNote = ""
+                )
+            }
+            is AccountEvent.TransferAmountChanged -> _state.update { it.copy(transferAmount = event.amount) }
+            is AccountEvent.TransferToAccountSelected -> _state.update { it.copy(transferToAccountUuid = event.accountUuid) }
+            is AccountEvent.TransferNoteChanged -> _state.update { it.copy(transferNote = event.note) }
+            is AccountEvent.ConfirmTransfer -> confirmTransfer()
+            is AccountEvent.DismissTransferSheet -> _state.update {
+                it.copy(
+                    showTransferSheet = false,
+                    transferAmount = "",
+                    transferFromAccountUuid = "",
+                    transferToAccountUuid = "",
+                    transferNote = ""
+                )
+            }
+
             is AccountEvent.DismissIncomeSheet -> _state.update {
                 it.copy(
                     showIncomeSheet = false,
@@ -321,6 +348,57 @@ class AccountViewModel @Inject constructor(
                 refreshData()
             } catch (e: Exception) {
                 _effect.send(AccountEffect.ShowSnackbar("Failed to delete income"))
+            } finally {
+                _state.update { it.copy(isActionLoading = false) }
+            }
+        }
+    }
+
+    private fun confirmTransfer() {
+        val currentState = _state.value
+        val amount = currentState.transferAmount.toDoubleOrNull()
+
+        if (amount == null || amount <= 0) {
+            viewModelScope.launch { _effect.send(AccountEffect.ShowSnackbar("Enter a valid amount")) }
+            return
+        }
+        if (currentState.transferFromAccountUuid.isEmpty()) {
+            viewModelScope.launch { _effect.send(AccountEffect.ShowSnackbar("Select source account")) }
+            return
+        }
+        if (currentState.transferToAccountUuid.isEmpty()) {
+            viewModelScope.launch { _effect.send(AccountEffect.ShowSnackbar("Select destination account")) }
+            return
+        }
+        if (currentState.transferFromAccountUuid == currentState.transferToAccountUuid) {
+            viewModelScope.launch { _effect.send(AccountEffect.ShowSnackbar("Cannot transfer to the same account")) }
+            return
+        }
+
+        viewModelScope.launch {
+            _state.update { it.copy(isActionLoading = true) }
+            try {
+                transferBetweenAccountsUseCase(
+                    fromAccountUuid = currentState.transferFromAccountUuid,
+                    toAccountUuid = currentState.transferToAccountUuid,
+                    amount = amount
+                )
+                _state.update {
+                    it.copy(
+                        showTransferSheet = false,
+                        transferAmount = "",
+                        transferFromAccountUuid = "",
+                        transferToAccountUuid = "",
+                        transferNote = ""
+                    )
+                }
+                delay(350)
+                _effect.send(AccountEffect.ShowSnackbar("Transfer successful"))
+                refreshData()
+            } catch (e: IllegalArgumentException) {
+                _effect.send(AccountEffect.ShowSnackbar(e.message ?: "Transfer failed"))
+            } catch (e: Exception) {
+                _effect.send(AccountEffect.ShowSnackbar("Transfer failed"))
             } finally {
                 _state.update { it.copy(isActionLoading = false) }
             }

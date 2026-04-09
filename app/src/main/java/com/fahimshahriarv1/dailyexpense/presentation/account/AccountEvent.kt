@@ -26,4 +26,12 @@ sealed class AccountEvent {
     data object ConfirmUpdateIncome : AccountEvent()
     data class DeleteIncome(val income: Income) : AccountEvent()
     data object DismissIncomeSheet : AccountEvent()
+
+    // Transfer events
+    data class StartTransfer(val account: Account) : AccountEvent()
+    data class TransferAmountChanged(val amount: String) : AccountEvent()
+    data class TransferToAccountSelected(val accountUuid: String) : AccountEvent()
+    data class TransferNoteChanged(val note: String) : AccountEvent()
+    data object ConfirmTransfer : AccountEvent()
+    data object DismissTransferSheet : AccountEvent()
 }

@@ -29,7 +29,14 @@ data class AccountState(
     val incomeAccountUuid: String = "",
     val incomeSources: List<String> = listOf(
         "Salary", "Freelance", "Business", "Investment", "Gift", "Other"
-    )
+    ),
+
+    // Transfer form
+    val showTransferSheet: Boolean = false,
+    val transferAmount: String = "",
+    val transferFromAccountUuid: String = "",
+    val transferToAccountUuid: String = "",
+    val transferNote: String = ""
 )
 
 sealed class AccountEffect {
