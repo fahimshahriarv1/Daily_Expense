@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -75,6 +76,7 @@ fun ExpenseScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    var expenseToDelete by remember { mutableStateOf<Expense?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
@@ -174,7 +176,7 @@ fun ExpenseScreen(
                             ExpenseItem(
                                 expense = expense,
                                 onEdit = { viewModel.onEvent(ExpenseEvent.StartEdit(expense)) },
-                                onDelete = { viewModel.onEvent(ExpenseEvent.DeleteExpense(expense)) }
+                                onDelete = { expenseToDelete = expense }
                             )
                         }
                     }
@@ -195,6 +197,23 @@ fun ExpenseScreen(
             }
         }
 
+    }
+
+    expenseToDelete?.let { expense ->
+        AlertDialog(
+            onDismissRequest = { expenseToDelete = null },
+            title = { Text("Delete Expense") },
+            text = { Text("Are you sure you want to delete this ${expense.category} expense of ${String.format("%.2f", expense.amount)}?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.onEvent(ExpenseEvent.DeleteExpense(expense))
+                    expenseToDelete = null
+                }) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { expenseToDelete = null }) { Text("Cancel") }
+            }
+        )
     }
 
     if (state.showAddSheet) {
