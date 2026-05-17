@@ -91,6 +91,9 @@ fun AccountScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var balanceVisible by remember { mutableStateOf(false) }
+    var accountToDelete by remember { mutableStateOf<Account?>(null) }
+    var incomeToDelete by remember { mutableStateOf<Income?>(null) }
+    var transferToDelete by remember { mutableStateOf<Transfer?>(null) }
 
     // Auto-hide after 3 seconds
     LaunchedEffect(balanceVisible) {
@@ -196,7 +199,7 @@ fun AccountScreen(
                             onTapBalance = { balanceVisible = true },
                             onAddIncome = { viewModel.onEvent(AccountEvent.StartAddIncome(account)) },
                             onTransfer = { viewModel.onEvent(AccountEvent.StartTransfer(account)) },
-                            onDelete = { viewModel.onEvent(AccountEvent.DeleteAccount(account)) }
+                            onDelete = { accountToDelete = account }
                         )
                     }
                 }
@@ -216,7 +219,7 @@ fun AccountScreen(
                         IncomeItem(
                             income = income,
                             onEdit = { viewModel.onEvent(AccountEvent.StartEditIncome(income)) },
-                            onDelete = { viewModel.onEvent(AccountEvent.DeleteIncome(income)) }
+                            onDelete = { incomeToDelete = income }
                         )
                     }
                 }
@@ -235,7 +238,7 @@ fun AccountScreen(
                     items(state.transfers, key = { "transfer_${it.id}" }) { transfer ->
                         TransferItem(
                             transfer = transfer,
-                            onDelete = { viewModel.onEvent(AccountEvent.DeleteTransfer(transfer)) }
+                            onDelete = { transferToDelete = transfer }
                         )
                     }
                 }
@@ -255,6 +258,57 @@ fun AccountScreen(
             }
         }
 
+    }
+
+    accountToDelete?.let { account ->
+        AlertDialog(
+            onDismissRequest = { accountToDelete = null },
+            title = { Text("Delete Account") },
+            text = { Text("Are you sure you want to delete \"${account.name}\"? All associated expenses will also be deleted.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.onEvent(AccountEvent.DeleteAccount(account))
+                    accountToDelete = null
+                }) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { accountToDelete = null }) { Text("Cancel") }
+            }
+        )
+    }
+
+    incomeToDelete?.let { income ->
+        AlertDialog(
+            onDismissRequest = { incomeToDelete = null },
+            title = { Text("Delete Income") },
+            text = { Text("Are you sure you want to delete this ${income.source} income of ${String.format("%.2f", income.amount)}?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.onEvent(AccountEvent.DeleteIncome(income))
+                    incomeToDelete = null
+                }) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { incomeToDelete = null }) { Text("Cancel") }
+            }
+        )
+    }
+
+    transferToDelete?.let { transfer ->
+        AlertDialog(
+            onDismissRequest = { transferToDelete = null },
+            title = { Text("Delete Transfer") },
+            text = { Text("Are you sure you want to delete this transfer of ${String.format("%.2f", transfer.amount)} from ${transfer.fromAccountName} to ${transfer.toAccountName}?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.onEvent(AccountEvent.DeleteTransfer(transfer))
+                    transferToDelete = null
+                }) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { transferToDelete = null }) { Text("Cancel") }
+            }
+        )
     }
 
     if (state.showAddDialog) {
